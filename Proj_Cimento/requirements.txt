@@ -1,0 +1,12 @@
+pandas
+numpy
+matplotlib
+seaborn
+scikit-learn
+# TensorFlow pode não ser compatível com algumas versões do Python (ver nota abaixo)
+tensorflow
+joblib
+openpyxl
+nbconvert
+jupyter
+ipykernel

@@ -1,0 +1,12 @@
+Equação estimada (unidades originais):
+y = -4.70622
+-0.000859313 * Banco de dados: características da matriz e das fibras utilizadas
++0.0395626 * feature 4
+-0.117126 * feature 5
++5.73823 * feature 6
++0.0967559 * feature 7
++2.65551 * feature 8
+-0.91093 * feature 9
++0.607747 * feature 11
+-0.0504685 * feature 13
+-0.963965 * feature 14
