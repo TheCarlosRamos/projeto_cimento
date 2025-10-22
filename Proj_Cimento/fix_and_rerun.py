@@ -37,47 +37,74 @@ if candidate is None:
 df = pd.read_excel(excel_path, header=candidate)
 raw = pd.read_excel(excel_path, header=None)
 
-# função auxiliar para limpar nomes
+# funções auxiliares para nomes
 def clean_name(s):
     s = str(s).strip()
     s = s.replace('\n', ' ').replace('  ', ' ').strip()
-    # remove caracteres problemáticos
     s = re.sub(r'["\']', '', s)
     s = re.sub(r'\s+', ' ', s)
-    # prefer underscore
     s = s.replace(' ', '_')
     return s
 
+def clean_label(s):
+    s = str(s).strip()
+    s = s.replace('\n', ' ').replace('\r', ' ')
+    s = re.sub(r'\s+', ' ', s).strip()
+    return s
+
+# termos genéricos que devemos ignorar ao buscar o melhor rótulo
+GENERIC_TOKENS = {
+    'unnamed',
+    'banco de dados: características da matriz e das fibras utilizadas',
+    'banco de dados',
+}
+
+# construir nomes "técnicos" (para código) e "bonitos" (para exibição)
 new_cols = []
+display_map = {}
+old_cols = list(df.columns)
 for i, col in enumerate(df.columns):
-    col_str = str(col)
-    if 'Unnamed' in col_str or col_str.strip() == '':
-        # tentar obter da linha anterior do raw (se existe)
-        if candidate - 1 >= 0 and candidate - 1 < raw.shape[0]:
-            candidate_label = raw.iloc[candidate-1, i]
-            if pd.notna(candidate_label) and str(candidate_label).strip() != '':
-                new_name = clean_name(candidate_label)
-            else:
-                new_name = f'feature_{i}'
+    candidates_labels = []
+    # observar até 3 linhas acima do header
+    for up in range(0, 4):
+        r = candidate - up
+        if r >= 0 and r < raw.shape[0]:
+            val = raw.iloc[r, i]
+            if pd.notna(val) and str(val).strip() != '':
+                lab = clean_label(val)
+                candidates_labels.append(lab)
+    # selecionar o rótulo mais específico (mais próximo do header) ignorando genéricos
+    pretty = None
+    for lab in candidates_labels:  # já está do mais próximo p/ o mais distante
+        low = lab.lower()
+        if any(tok in low for tok in GENERIC_TOKENS):
+            continue
+        pretty = lab
+        break
+    if pretty is None:
+        # se a própria coluna do pandas já veio com algo útil
+        col_str = str(col)
+        if col_str.strip() != '' and 'Unnamed' not in col_str:
+            pretty = clean_label(col_str)
         else:
-            new_name = f'feature_{i}'
-    else:
-        new_name = clean_name(col_str)
-    # garantir unicidade
-    base = new_name
+            pretty = f'feature {i}'
+
+    tech = clean_name(pretty)
+    # garantir unicidade dos nomes técnicos
+    base = tech
     k = 1
-    while new_name in new_cols:
-        new_name = f"{base}_{k}"
+    while tech in new_cols:
+        tech = f"{base}_{k}"
         k += 1
-    new_cols.append(new_name)
+    new_cols.append(tech)
+    display_map[tech] = pretty  # manter unidades e acentuação na exibição
 
 # aplicar novos nomes
-old_cols = list(df.columns)
 df.columns = new_cols
 print('Column rename map:')
-for o,n in zip(old_cols, new_cols):
-    if o != n:
-        print(f"  {o} -> {n}")
+for o, n in zip(old_cols, new_cols):
+    if str(o) != str(n):
+        print(f"  {o} -> {n}  | display='{display_map.get(n, n)}'")
 
 # converter colunas para numérico
 def to_numeric_series(s):
@@ -85,36 +112,67 @@ def to_numeric_series(s):
 
 for c in df.columns:
     df[c] = to_numeric_series(df[c])
-# detectar target
-candidates = [c for c in df.columns if re.search(r'(?i)f\s*r\s*3|fr3|fR3|resist', c)]
-if candidates:
-    target_col = candidates[0]
-else:
+
+# preferir alvos fR1 e fR3
+target_patterns = [
+    re.compile(r'(?i)fr\s*[,/]*\s*1|fr1'),
+    re.compile(r'(?i)fr\s*[,/]*\s*3|fr3'),
+]
+target_col = None
+for pat in target_patterns:
+    for tech in df.columns:
+        disp = display_map.get(tech, tech)
+        if pat.search(disp):
+            target_col = tech
+            break
+    if target_col is not None:
+        break
+if target_col is None:
+    # fallback antigo
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     if numeric_cols:
-        # choose the numeric column with the most non-null values as fallback target
         counts = {c: df[c].notna().sum() for c in numeric_cols}
         target_col = max(counts, key=counts.get)
     else:
         raise ValueError('Não foi possível detectar a coluna alvo.')
-print('Target column chosen:', target_col)
+print('Target column chosen:', target_col, '| display =', display_map.get(target_col, target_col))
 
-# preparar X,y
+# preparar X usando apenas as variáveis especificadas pelo usuário
+desired_order = [
+    re.compile(r'(?i)fck.*mpa'),
+    re.compile(r'(?i)^l\b.*\[?mm\]?'),
+    re.compile(r'(?i)^d\b.*\[?mm\]?'),
+    re.compile(r'(?i)l\s*/\s*d|fator\s*de\s*forma'),
+    re.compile(r'(?i)teor.*fibra|\(\s*%\s*\)'),
+    re.compile(r'(?i)\bn\b.*gancho'),
+]
+
+def match_first(pattern: re.Pattern):
+    for tech in df.columns:
+        if tech == target_col:
+            continue
+        disp = display_map.get(tech, tech)
+        if pattern.search(disp):
+            return tech
+    return None
+
+selected = []
+for pat in desired_order:
+    m = match_first(pat)
+    if m is not None and m not in selected:
+        selected.append(m)
+
 df_num = df.dropna(subset=[target_col])
-# Primeiro, usar todas as colunas exceto o target
-feature_cols = [c for c in df_num.columns if c != target_col]
-# Remover colunas sem nenhum valor válido
-feature_cols = [c for c in feature_cols if df_num[c].notna().sum() > 0]
+feature_cols = [c for c in selected if df_num[c].notna().sum() > 0]
 
-# Fallback: se ainda estiver vazio, pegar colunas numéricas do dataframe original
+# Fallback: se nada encontrado, manter comportamento anterior (todas as colunas exceto target)
 if not feature_cols:
-    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
-    feature_cols = [c for c in numeric_cols if c != target_col]
+    feature_cols = [c for c in df_num.columns if c != target_col and df_num[c].notna().sum() > 0]
 
 if not feature_cols:
     raise ValueError('Nenhuma feature disponível após pré-processamento. Verifique os dados do Excel.')
 
-print('Features used:', feature_cols)
+print('Features used (ordered):', [display_map.get(c, c) for c in feature_cols])
 
 X = df_num[feature_cols].fillna(df_num[feature_cols].median())
 y = df_num[target_col]
@@ -154,8 +212,8 @@ joblib.dump(lr, 'model_lr.joblib')
 joblib.dump(scaler, 'scaler_X.joblib')
 print('Saved model_rf.joblib, model_lr.joblib, scaler_X.joblib')
 
-# salvar equation.txt (formatado)
-feat_display = [c.replace('_',' ') for c in feature_cols]
+# salvar equation.txt (formatado) com nomes amigáveis
+feat_display = [display_map.get(c, c).replace('_',' ') for c in feature_cols]
 with open('equation.txt','w',encoding='utf-8') as f:
     f.write('Equação estimada (unidades originais):\n')
     f.write(f'y = {adjusted_intercept:.6g}\n')
@@ -240,8 +298,8 @@ plt.plot(grid, y_eq, label='Equação (Ridge)', color='C0')
 if y_rf is not None:
     plt.plot(grid, y_rf, label='RandomForest', color='C1', alpha=0.8)
 plt.scatter(X[main_feat], y, s=12, alpha=0.4, label='Dados (todos)')
-plt.xlabel(main_feat.replace('_',' '))
-plt.ylabel('y (target)')
+plt.xlabel(display_map.get(main_feat, main_feat).replace('_',' '))
+plt.ylabel(display_map.get(target_col, 'y (target)').replace('_',' '))
 plt.title('Equação estimada vs RandomForest')
 plt.legend()
 
