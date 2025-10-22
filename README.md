@@ -1,72 +1,71 @@
 
-# Regressão de Resistência Residual em Concreto com Fibras (FRC)
+# Análise e Regressão de Concreto com Fibras
 
-A análise utiliza modelos de Regressão Linear (Ridge), Random Forest e Redes Neurais Profundas (DNN) para determinar a influência de parâmetros do concreto e da fibra (como teor de fibra, $f_{ck}$, comprimento e diâmetro) no desempenho do material.
 
------
+Este notebook Jupyter tem como objetivo principal aplicar técnicas de Machine Learning tradicionais (Regressão Múltipla) para **derivar uma equação explícita e interpretável** que preveja a resistência residual à tração na flexão do concreto com fibras ($f_{R,1}$).
 
-## Tecnologias Utilizadas
-
-  * **Python**
-  * **Pandas** e **NumPy** (Manipulação de Dados)
-  * **Matplotlib** e **Seaborn** (Visualização de Dados)
-  * **Scikit-learn (sklearn)** (Random Forest, Regressão Ridge, Pré-processamento, Avaliação)
-  * **TensorFlow/Keras** (Rede Neural Profunda - DNN)
-  * **Jupyter Notebook** (Ambiente de Desenvolvimento)
+O foco é na **interpretabilidade linear** (através dos coeficientes da Regressão Ridge) em detrimento da complexidade preditiva de modelos de Deep Learning (DNN).
 
 -----
 
-## Estrutura do Projeto
+## Objetivo do Projeto
 
-  * `regressao_concreto_fibras.ipynb.fixed`: O *notebook* principal contendo todo o código de importação, pré-processamento, análise exploratória, modelagem (DNN, Ridge), treinamento e avaliação.
-  * **Dados:** Os dados de entrada consistem em propriedades do concreto e da fibra.
-  * `modelo_fR1.h5`: Modelo Keras (DNN) treinado para prever o $f_{R,1}$.
-  * `modelo_fR3.h5`: Modelo Keras (DNN) treinado para prever o $f_{R,3}$.
-  * `scaler_X.pkl`: Objeto `StandardScaler` treinado para as variáveis de entrada.
-  * `scaler_y.pkl`: Objeto `StandardScaler` treinado para a variável alvo ($f_{R,1}$ ou $f_{R,3}$).
+1.  **Previsão de $f_{R,1}$:** Prever a Resistência Residual ($f_{R,1}$) do Concreto Reforçado com Fibras (FRC) com base em suas características físicas.
+2.  **Equação Explicita:** Utilizar a Regressão Ridge (regularizada) para obter os coeficientes que formam a equação linear de previsão mais robusta.
+3.  **Comparação:** Usar o Random Forest como um modelo não-linear de *benchmark* para avaliar o potencial preditivo máximo dos dados.
 
 -----
 
-## Metodologia e Resultados Principais
+## Tecnologias e Dependências
 
-### 1\. Variáveis de Entrada (Features)
+O notebook foi desenvolvido em Python e requer as seguintes bibliotecas:
 
-O modelo utiliza as seguintes características para prever a resistência residual:
+  * **`pandas`** e **`numpy`**: Para manipulação e cálculo de dados.
+  * **`scikit-learn` (`sklearn`)**: Contém os algoritmos de Machine Learning (`RidgeCV`, `RandomForestRegressor`) e ferramentas de pré-processamento (`StandardScaler`).
+  * **`matplotlib`** e **`seaborn`**: Para visualização e análise de dados.
 
-  * **$f_{ck}$ (MPa):** Resistência à compressão do concreto.
-  * **$l$ (mm):** Comprimento da fibra.
-  * **$d$ (mm):** Diâmetro da fibra.
-  * **$l/d$:** Fator de forma (relação comprimento/diâmetro).
-  * **Teor\_fibra ($\%$):** Teor volumétrico de fibra.
-  * **N\_ganchos:** Número de ganchos (para fibras de aço).
+Você pode instalar todas as dependências usando `pip`:
 
-### 2\. Modelagem e Desempenho
-
-| Modelo | Métrica | Valor | Observação |
-| :--- | :--- | :--- | :--- |
-| **Random Forest** | $R^2$ | $0.8095$ | Melhor capacidade de ajuste geral. |
-| **Regressão Ridge** | $R^2$ | $0.7489$ | Base para a equação linear interpretável. |
-| **Equação Linear** | $R^2$ | $0.7869$ | Excelente ajuste para um modelo interpretável. |
-| **Equação Linear** | MAE | $0.8894$ | Erro Médio Absoluto em N/mm². |
-
-### 3\. Equação Linear Estimada (Regressão Ridge)
-
-O modelo de Regressão Ridge resulta em uma equação, que é altamente interpretável e pode ser usada para cálculo manual (termos em unidades originais):
+```bash
+pip install pandas numpy scikit-learn matplotlib seaborn
+```
 
 -----
 
-## Como Executar o Projeto
+## Estrutura e Dados
 
-1.  **Pré-requisitos:** Instale as bibliotecas Python necessárias:
-    ```bash
-    pip install pandas numpy matplotlib seaborn scikit-learn tensorflow keras joblib
-    ```
-2.  **Execução:** Abra o arquivo `regressao_concreto_fibras.ipynb.fixed` em um ambiente Jupyter (JupyterLab, VS Code, Google Colab).
-3.  **Análise:** Execute as células sequencialmente para:
-      * Carregar e inspecionar os dados.
-      * Visualizar a Análise Exploratória de Dados (AED) e a matriz de correlação.
-      * Treinar os modelos DNN para $f_{R,1}$ e $f_{R,3}$.
-      * Avaliar e salvar os modelos e *scalers*.
-      * Fazer uma previsão com dados de um novo concreto.
+### Variáveis de Entrada (Features - $X$)
+
+O modelo utiliza as seguintes características do concreto e das fibras:
+
+| Variável | Descrição |
+| :--- | :--- |
+| `fck_MPa` | Resistência à compressão do concreto (fck). |
+| `l_mm` | Comprimento da fibra. |
+| `d_mm` | Diâmetro da fibra. |
+| `l_d` | Fator de forma da fibra (Razão l/d). |
+| `Teor_fibra_percent` | Teor de volume de fibras (em porcentagem). |
+| `N_ganchos` | Indicador da presença de ganchos ou forma de ancoragem da fibra. |
+
+### Variável de Saída (Alvo - $y$)
+
+  * `fR1_experimental`: Resistência Residual do Concreto (em $\text{N/mm}^2$ ou $\text{MPa}$) no CMOD de $0.5 \text{ mm}$.
 
 -----
+
+## Como Executar o Notebook
+
+1.  **Abra o Notebook:** Inicie o JupyterLab ou Jupyter Notebook e abra o arquivo `regressao_concreto_fibras_final.ipynb`.
+2.  **Substitua os Dados:** Substitua o dicionário de dados de exemplo no Bloco 2 pelos seus dados completos (recomenda-se carregar um arquivo `.csv` ou `.xlsx`).
+3.  **Execução Sequencial:** Execute todas as células em ordem (pode usar `Run -> Run All Cells`).
+4.  **Análise:**
+      * Verifique os resultados de $R^2$ para Random Forest e Ridge (o primeiro deve ser maior).
+      * Analise os coeficientes da Regressão Ridge para interpretar a influência de cada variável na equação linear.
+
+
+
+O notebook gera as seguintes saídas principais:
+
+  * **Resultados de ML:** Métricas de avaliação (MAE e $R^2$) para Random Forest e Regressão Ridge no conjunto de teste.
+  * **Coeficientes da Equação:** Lista dos coeficientes de regressão que definem a equação de previsão.
+  * **Gráficos:** Visualização da comparação entre os valores reais ($y_{true}$) e os valores previstos ($y_{hat}$) pela equação final.
