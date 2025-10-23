@@ -1,71 +1,51 @@
 
-# Análise e Regressão de Concreto com Fibras
 
+# Regressão de Propriedades de Concreto com Fibras (ML e DNN)
 
-Este notebook Jupyter tem como objetivo principal aplicar técnicas de Machine Learning tradicionais (Regressão Múltipla) para **derivar uma equação explícita e interpretável** que preveja a resistência residual à tração na flexão do concreto com fibras ($f_{R,1}$).
+Este projeto aplica e compara diferentes modelos de Machine Learning (ML) e Deep Learning (DNN) para prever as propriedades de resistência residual de concreto reforçado com fibras.
 
-O foco é na **interpretabilidade linear** (através dos coeficientes da Regressão Ridge) em detrimento da complexidade preditiva de modelos de Deep Learning (DNN).
+O foco principal é a previsão da resistência residual à tração do concreto (`fR,1`).
 
------
+## Conteúdo do Repositório
 
-## Objetivo do Projeto
+O projeto é composto por dois notebooks Jupyter que exploram abordagens distintas de regressão, além do arquivo de dependências:
 
-1.  **Previsão de $f_{R,1}$:** Prever a Resistência Residual ($f_{R,1}$) do Concreto Reforçado com Fibras (FRC) com base em suas características físicas.
-2.  **Equação Explicita:** Utilizar a Regressão Ridge (regularizada) para obter os coeficientes que formam a equação linear de previsão mais robusta.
-3.  **Comparação:** Usar o Random Forest como um modelo não-linear de *benchmark* para avaliar o potencial preditivo máximo dos dados.
+1.  **`ml_regressao.ipynb`**
+      * Implementa modelos de **Machine Learning**.
+      * Compara o desempenho de um **Random Forest Regressor** e uma **Regressão Linear Simples** (implementada via Keras).
+      * O modelo Random Forest obteve uma métrica R² de aproximadamente **0.809**.
+2.  **`dnn_regressao.ipynb`**
+      * Treina uma **Deep Neural Network (DNN)** para a tarefa de regressão.
+      * Foca na interpretabilidade, gerando uma **Equação Linear Aproximada** em **unidades originais** a partir das previsões da DNN.
+3.  **`requirements.txt`**
+      * Lista todas as bibliotecas e dependências necessárias para executar os notebooks.
 
------
+## Conjunto de Dados
 
-## Tecnologias e Dependências
+Os notebooks esperam que o arquivo de dados esteja no mesmo diretório, sob o nome **`teste banco de dados.xlsx`**.
 
-O notebook foi desenvolvido em Python e requer as seguintes bibliotecas:
+### Variáveis
 
-  * **`pandas`** e **`numpy`**: Para manipulação e cálculo de dados.
-  * **`scikit-learn` (`sklearn`)**: Contém os algoritmos de Machine Learning (`RidgeCV`, `RandomForestRegressor`) e ferramentas de pré-processamento (`StandardScaler`).
-  * **`matplotlib`** e **`seaborn`**: Para visualização e análise de dados.
+| Tipo | Variável | Unidade/Descrição |
+| :--- | :--- | :--- |
+| **Features (Entrada)** | `fck (resistência)` | Resistência do Concreto [MPa] |
+| **Features (Entrada)** | `l (comprimento)` | Comprimento do corpo de prova/fibra [mm] |
+| **Features (Entrada)** | `d (diâmetro)` | Diâmetro do corpo de prova/fibra [mm] |
+| **Features (Entrada)** | `l/d (fator de forma)` | Fator de forma |
+| **Features (Entrada)** | `Teor de fibra (%)` | Teor de fibra [%] |
+| **Features (Entrada)** | `N (ganchos)` | Número de ganchos (na fibra) |
+| **Target (Saída)** | `fR,1 (N/mm²) (experimental)` | Resistência Residual à Tração (Alvo principal) |
+| **Target Alternativo** | `fR,3 (N/mm²) (experimental)` | Resistência Residual à Tração (Alvo secundário/alternativo) |
 
-Você pode instalar todas as dependências usando `pip`:
+## Pré-requisitos
 
-```bash
-pip install pandas numpy scikit-learn matplotlib seaborn
-```
+Para replicar os resultados, você precisará de um ambiente Python com as seguintes bibliotecas:
 
------
+  * `pandas` (Manipulação de dados)
+  * `numpy` (Computação numérica)
+  * `scikit-learn` (Modelos de ML e pré-processamento)
+  * `tensorflow` (Modelos DNN e Keras)
+  * `matplotlib` e `seaborn` (Visualização de dados)
+  * `openpyxl` (Para ler o arquivo de dados `.xlsx`)
+  * `jupyter` e `ipykernel` (Para rodar os notebooks)
 
-## Estrutura e Dados
-
-### Variáveis de Entrada (Features - $X$)
-
-O modelo utiliza as seguintes características do concreto e das fibras:
-
-| Variável | Descrição |
-| :--- | :--- |
-| `fck_MPa` | Resistência à compressão do concreto (fck). |
-| `l_mm` | Comprimento da fibra. |
-| `d_mm` | Diâmetro da fibra. |
-| `l_d` | Fator de forma da fibra (Razão l/d). |
-| `Teor_fibra_percent` | Teor de volume de fibras (em porcentagem). |
-| `N_ganchos` | Indicador da presença de ganchos ou forma de ancoragem da fibra. |
-
-### Variável de Saída (Alvo - $y$)
-
-  * `fR1_experimental`: Resistência Residual do Concreto (em $\text{N/mm}^2$ ou $\text{MPa}$) no CMOD de $0.5 \text{ mm}$.
-
------
-
-## Como Executar o Notebook
-
-1.  **Abra o Notebook:** Inicie o JupyterLab ou Jupyter Notebook e abra o arquivo `regressao_concreto_fibras_final.ipynb`.
-2.  **Substitua os Dados:** Substitua o dicionário de dados de exemplo no Bloco 2 pelos seus dados completos (recomenda-se carregar um arquivo `.csv` ou `.xlsx`).
-3.  **Execução Sequencial:** Execute todas as células em ordem (pode usar `Run -> Run All Cells`).
-4.  **Análise:**
-      * Verifique os resultados de $R^2$ para Random Forest e Ridge (o primeiro deve ser maior).
-      * Analise os coeficientes da Regressão Ridge para interpretar a influência de cada variável na equação linear.
-
-
-
-O notebook gera as seguintes saídas principais:
-
-  * **Resultados de ML:** Métricas de avaliação (MAE e $R^2$) para Random Forest e Regressão Ridge no conjunto de teste.
-  * **Coeficientes da Equação:** Lista dos coeficientes de regressão que definem a equação de previsão.
-  * **Gráficos:** Visualização da comparação entre os valores reais ($y_{true}$) e os valores previstos ($y_{hat}$) pela equação final.
