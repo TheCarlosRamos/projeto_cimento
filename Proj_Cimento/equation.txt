@@ -1,8 +1,0 @@
-Equação estimada (unidades originais):
-y = -2.98224
- + 0.0614239 * fck (resistência)            [MPa]
- + 0.015829 * l (comprimento)            [mm]
- - 0.990755 * d (diâmetro            [mm]
- + 0.0191458 * l/d      (fator de forma
- + 6.82444 * Teor de fibra (%)
- + 0.320201 * N (ganchos)
