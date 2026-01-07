@@ -10,12 +10,12 @@
 
 ##  **Key Features**
 
-- ** High Accuracy**: 89% R² for fR,1 prediction using Gradient Boosting
-- ** Interpretable AI**: SHAP explanations + linear equation extraction from DNN
-- ** Comprehensive Analysis**: 7-phase pipeline from raw data to deployable models
-- ** Engineering Focus**: Specifically designed for concrete materials science
-- ** AutoML Integration**: Tested 42 regression models + 26 classification algorithms
-- ** Experimental Validation**: Based on 281 experimental samples with 6 key parameters
+- **High Accuracy**: 89% R² for fR,1 prediction using Gradient Boosting
+- **Interpretable AI**: SHAP explanations + linear equation extraction from DNN
+- **Comprehensive Analysis**: 7-phase pipeline from raw data to deployable models
+- **Engineering Focus**: Specifically designed for concrete materials science
+- **AutoML Integration**: Tested 42 regression models + 26 classification algorithms
+- **Experimental Validation**: Based on 281 experimental samples with 6 key parameters
 
 
 
